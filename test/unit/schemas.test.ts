@@ -86,6 +86,12 @@ function hasAnyOfArrayWithStringItems(schema: JsonSchemaNode | undefined): boole
 	});
 }
 
+function isRequiredOnlySchema(value: unknown): boolean {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+	const keys = Object.keys(value as Record<string, unknown>);
+	return keys.length === 1 && keys[0] === "required";
+}
+
 let schemas: Record<string, JsonSchemaNode> = {};
 let SubagentParams: SubagentParamsSchema | undefined;
 let schemasAvailable = true;
@@ -234,6 +240,27 @@ describe("SubagentParams schema", { skip: !schemasAvailable ? "typebox not avail
 		assert.deepEqual(missingItemsPaths, []);
 	});
 
+	it("does not encode acceptance contract presence with required-only schema nodes", () => {
+		const rejectedPaths: string[] = [];
+
+		for (const [name, schema] of Object.entries(schemas)) {
+			const stack: Array<{ path: string; value: unknown; insideAcceptance: boolean }> = [{ path: name, value: schema, insideAcceptance: false }];
+			while (stack.length > 0) {
+				const current = stack.pop()!;
+				const insideAcceptance = current.insideAcceptance
+					|| (current.value && typeof current.value === "object" && !Array.isArray(current.value) && String((current.value as JsonSchemaNode).description ?? "").startsWith("Optional acceptance contract."));
+				if (insideAcceptance && isRequiredOnlySchema(current.value)) rejectedPaths.push(current.path);
+				if (Array.isArray(current.value)) {
+					current.value.forEach((value, index) => stack.push({ path: `${current.path}[${index}]`, value, insideAcceptance }));
+				} else if (current.value && typeof current.value === "object") {
+					for (const [key, value] of Object.entries(current.value)) stack.push({ path: `${current.path}.${key}`, value, insideAcceptance });
+				}
+			}
+		}
+
+		assert.deepEqual(rejectedPaths, []);
+	});
+
 	it("does not emit provider-rejected union schema shapes", () => {
 		const rejectedPaths: string[] = [];
 
@@ -353,6 +380,7 @@ describe("SubagentParams schema", { skip: !schemasAvailable ? "typebox not avail
 			{ chain: [{ expand: { from: { output: "targets", path: "/items" }, item: "target", key: "/path", maxItems: 4 }, parallel: { agent: "reviewer", task: "Review {target.path}", outputSchema: { type: "object" } }, collect: { as: "reviews" } }] },
 			{ agent: "worker", task: "Fix", acceptance: { criteria: ["Patch the bug"], evidence: ["changed-files"], maxFinalizationTurns: 2 } },
 			{ agent: "worker", task: "Fix", acceptance: { verify: [{ id: "unit", command: "npm test" }] } },
+			{ agent: "worker", task: "Fix", acceptance: {} },
 			{ config: { name: "reviewer", description: "Review things" } },
 			{ config: JSON.stringify({ name: "reviewer", description: "Review things" }) },
 		];
@@ -374,7 +402,6 @@ describe("SubagentParams schema", { skip: !schemasAvailable ? "typebox not avail
 			{ agent: "worker", task: "Fix", acceptance: true },
 			{ agent: "worker", task: "Fix", acceptance: "checked" },
 			{ agent: "worker", task: "Fix", acceptance: false },
-			{ agent: "worker", task: "Fix", acceptance: {} },
 			{ agent: "worker", task: "Fix", acceptance: { level: "checked" } },
 			{ agent: "worker", task: "Fix", acceptance: { criteria: ["Patch"], review: true } },
 			{ config: [] },

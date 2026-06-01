@@ -96,16 +96,7 @@ const AcceptanceOverride = Type.Unsafe({
 		maxFinalizationTurns: { type: "integer", minimum: 1, maximum: 10 },
 	},
 	additionalProperties: false,
-	allOf: [{
-		anyOf: [
-			{ required: ["criteria"] },
-			{ required: ["evidence"] },
-			{ required: ["verify"] },
-			{ required: ["review"] },
-			{ required: ["stopRules"] },
-		],
-	}],
-	description: "Optional acceptance contract. Use this for goal-style requests and for implementation handoffs from plans, PRDs, specs, issues, or broad fixes. Put implementation instructions and plan paths in task; put the definition of done in criteria, proof in evidence/verify, constraints in stopRules, and the bounded loop budget in maxFinalizationTurns. When present, the child must complete a same-session self-review/repair loop before acceptance is evaluated.",
+	description: "Optional acceptance contract. Use this for goal-style requests and for implementation handoffs from plans, PRDs, specs, issues, or broad fixes. Put implementation instructions and plan paths in task; put the definition of done in criteria, proof in evidence/verify, constraints in stopRules, and the bounded loop budget in maxFinalizationTurns. Runtime validation still requires at least one of criteria, evidence, verify, review, or stopRules. When present, the child must complete a same-session self-review/repair loop before acceptance is evaluated.",
 });
 
 const TaskItem = Type.Object({

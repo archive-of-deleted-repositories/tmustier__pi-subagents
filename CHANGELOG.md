@@ -5,6 +5,9 @@
 ### Changed
 - Strengthened tool and skill guidance so writer subagents launched from plans, specs, issues, or broad fixes proactively use structured `acceptance` instead of burying validation requirements only in task prose.
 
+### Fixed
+- Removed a provider-unfriendly required-only subschema from the public `acceptance` tool schema so Kimi models served through OpenCode Go can load the `subagent` tool, while keeping runtime validation for empty acceptance contracts.
+
 ## [0.27.0] - 2026-05-30
 
 ### Changed
