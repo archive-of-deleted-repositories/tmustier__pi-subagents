@@ -2,15 +2,24 @@
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-08-23
+
+### Highlights
+- Run allowlisted OpenAI-Codex subagents with opt-in `fast` mode when you want priority service tier.
+- Pass bounded extension metadata into native child launches without leaking that authority to external runners.
+- Workflow scripts are easier to read when child results are stringified or returned.
+- Completion guards now use safer tracked-file evidence, including large dirty files and interrupted runs.
+- Model verification is less fragile for provider-qualified and variant-tagged model ids.
+
 ### Added
 - Add opt-in `fast: true` launches for allowlisted native OpenAI-Codex subagents, using OpenAI's priority service tier.
 - Add bounded namespaced extension bindings to child launch contracts. Thanks to [@FL03](https://github.com/FL03) for #1410.
 
 ### Fixed
 - Render workflow child results as useful text when scripts stringify `runs.all` or awaited `runs.run` result objects.
-- Bind fast mode into launch contract provenance and keep oversize tracked mutation evidence fail-closed.
 - Keep checked acceptance compatible with strict workflow child `outputSchema` results. Thanks to [@rtbe](https://github.com/rtbe) for #1406.
 - Use bounded tracked-file mutation evidence for implementation completion guards, including files that were already dirty when the child started. Thanks to [@rtbe](https://github.com/rtbe) for #1407.
+- Bind fast mode into launch contract provenance and keep large tracked-file mutation evidence precise.
 - Add timeout recovery summaries with changed tracked files, active child state, and session/artifact paths. Thanks to [@rtbe](https://github.com/rtbe) for #1409.
 - Fail closed when reviewer runs are interrupted or detached workflow children settle without persisted top-level continuation proof. Thanks to [@rtbe](https://github.com/rtbe) for #1408.
 - Stop flagging awaited `.then()` workflow chains as unawaited when a handler returns another child launch.
