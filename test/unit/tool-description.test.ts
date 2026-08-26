@@ -41,7 +41,7 @@ describe("registered subagent tool description", () => {
 		assert.match(description, /script inputs are mutually exclusive/i);
 		assert.equal(metadata.promptSnippet, SUBAGENT_TOOL_PROMPT_SNIPPET);
 		assert.equal(Buffer.byteLength(metadata.promptSnippet!), 62);
-		assert.equal(Buffer.byteLength(metadata.promptGuidelines!.join("\n")), 1623);
+		assert.equal(Buffer.byteLength(metadata.promptGuidelines!.join("\n")), 1897);
 		assert.deepEqual(metadata.promptGuidelines, SUBAGENT_TOOL_PROMPT_GUIDELINES);
 		assert.match(metadata.promptGuidelines!.join("\n"), /Use subagent only when delegation is needed/i);
 		assert.match(metadata.promptGuidelines!.join("\n"), /action: \"list\".*executable, non-disabled/i);
@@ -52,6 +52,9 @@ describe("registered subagent tool description", () => {
 		assert.match(metadata.promptGuidelines!.join("\n"), /await runs\.all.*do not read \.output from unawaited runs\.run launches/i);
 		assert.match(description, /External CLI agents.*model override.*native Pi tools/i);
 		assert.match(metadata.promptGuidelines!.join("\n"), /External CLI agents.*model override.*native Pi tools/i);
+		assert.match(metadata.promptGuidelines!.join("\n"), /suffix on the model string.*off\/minimal\/low\/medium\/high\/xhigh\/max/i);
+		assert.match(metadata.promptGuidelines!.join("\n"), /suffix wins over the agent's thinking default/i);
+		assert.match(metadata.promptGuidelines!.join("\n"), /watchdog\.configure' and is ignored on dispatch/i);
 	});
 
 	it("keeps the full description when configured", () => {
@@ -84,6 +87,9 @@ describe("registered subagent tool description", () => {
 		assert.match(description, /Oracle\/advisor consultations should use supervisor dialogue for material unknowns when available/i);
 		assert.match(description, /same-role fallback challenge and label it as fallback/i);
 		assert.match(description, /status\.json/);
+		assert.match(description, /suffix on the model string.*off\/minimal\/low\/medium\/high\/xhigh\/max/i);
+		assert.match(description, /suffix wins over the agent's thinking default/i);
+		assert.match(description, /watchdog\.configure' and is ignored on dispatch/i);
 	});
 
 	it("offers a compact mode that keeps the two-tier contract and safety guidance", () => {
@@ -107,6 +113,9 @@ describe("registered subagent tool description", () => {
 		assert.match(description, /same-role fallback challenge and label it as fallback/i);
 		assert.match(description, /exactly one non-empty title or summary/i);
 		assert.match(description, /goal may only be true and requires budget:\{tokens\}/i);
+		assert.match(description, /Per-run thinking is a suffix on the model string.*off\/minimal\/low\/medium\/high\/xhigh\/max/i);
+		assert.match(description, /suffix wins over the agent's thinking default/i);
+		assert.match(description, /watchdog\.configure' and is ignored on dispatch/i);
 		assert.ok(description.length < FULL_SUBAGENT_TOOL_DESCRIPTION.length);
 	});
 
