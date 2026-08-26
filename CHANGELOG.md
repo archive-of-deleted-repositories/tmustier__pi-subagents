@@ -2,51 +2,58 @@
 
 ## [Unreleased]
 
-### Fixed
-- Preserve agent frontmatter output defaults for prompt-template delegated leaves. Thanks to [@ashlineldridge](https://github.com/ashlineldridge) for #1521.
-- Reclaim failed async capacity slots after a configurable abandoned timeout when the runner PID is gone, while preserving honest unknown process-proof diagnostics. Thanks to [@rafafortes](https://github.com/rafafortes) for #1472.
-- Reject non-string workflow-child summary identifiers when reading receipt metadata.
-- Resolve the `advisor` builtin alias through the bundled `oracle` definition in model listings. Thanks to [@smileBeda](https://github.com/smileBeda) for #1502.
-- Clarify terminal keyed workflow-resume failures when `workflow-receipt.json` is unavailable, including direct child-run recovery from status and event logs (#1512).
-- Follow symlinked directories during agent discovery without revisiting recursive links. Thanks to [@robsdudeson](https://github.com/robsdudeson) for #1505 and #1510.
-- Explain unknown-agent failures with the effective cwd and discovery inputs. Thanks to [@genkikadomatsu](https://github.com/genkikadomatsu) for #1511.
-- Retry fallback models for transient provider connection failures. Thanks to [@genkikadomatsu](https://github.com/genkikadomatsu) for #1508.
-- Preserve typed errors, partial output, and transcript/artifact metadata when foreground workflow children resume. See #1513.
-- Bypass repository fsmonitor hooks when collecting mutation evidence. Thanks to [@jpriverar](https://github.com/jpriverar) for #1497.
-- Avoid the fatal Node `ReadFileUtf8` retention path. Thanks to [@pgoodjohn](https://github.com/pgoodjohn) for #1501.
-- Preserve bounded async child failure context after compaction, including missing file-only output, instead of leaving failed run summaries empty. See #1495.
-- Ignore stale `agent_settled` events from child attempts that report a retrying compaction, so resumed children are not aborted before their replacement attempt can finish. See #1504.
-- Base64-encode the `--session-roots` argument passed to the Herdr inspector runner so `inspector.open` no longer corrupts session roots on Windows, where PowerShell's `\"` is not a recognized quote escape and truncates the JSON-stringified array mid-argument. Thanks to [@stavg91](https://github.com/stavg91) for #1499.
-- Distinguish same-agent parallel children in Fleet with their explicit task labels. Thanks to [@ljie-PI](https://github.com/ljie-PI) for #1487.
-- Keep async runner process-terminal event delivery from crashing the session when the captured extension context is stale after a session replacement or reload. Thanks to [@AdrianAcala](https://github.com/AdrianAcala) for #1485.
-- Preserve parent model inheritance for workflow children when workflow setup reads session data before launch, and avoid carrying a stale live-session model into scheduled owners. Thanks to [@alexei-led](https://github.com/alexei-led) for #1489 and #1490.
-- Exclude completed one-shot schedules from the pending schedule limit without deleting their durable history. Thanks to [@rafafortes](https://github.com/rafafortes) for #1478.
-- Repair bounded dead async run candidates before retention classifies them, so existing terminal retention guards can reclaim stale run directories without deleting ambiguous worktrees or branches. Thanks to [@rafafortes](https://github.com/rafafortes) for #1477.
-- Make async runs visible to exact status lookup as soon as launch succeeds, and deliver one completion when a runner dies before its normal status write. Thanks to [@rafafortes](https://github.com/rafafortes) for #1471 and [@VincentHanxiaoDu](https://github.com/VincentHanxiaoDu) for #1480.
-- Record explicit completed, failed, timed-out, stopped, and interrupted outcomes in run history. Thanks to [@rafafortes](https://github.com/rafafortes) for #1474.
-- Preserve the local user identity and temporary-directory environment needed by authenticated Claude Code adapter runs.
-- Preserve structured-output and related bounded child contract fields when foreground workflow children resume. Thanks to [@Livan-pro](https://github.com/Livan-pro) for #1460.
-- Preview runtime-recorded workflow child sessions in Fleet and inspect without trusting sibling transcripts. Thanks to [@JHa13y](https://github.com/JHa13y) for #1441.
-- Keep inline workflow children resumable from their foreground runs without mistaking a missing async directory for lost state. Thanks to [@lancegui](https://github.com/lancegui) for #1442.
-- Resolve package subagents from bare HTTP(S) Git URLs stored in Pi settings. Thanks to [@trancikk](https://github.com/trancikk) for #1452.
-- Make workflow validation and return serialization failures easier to recover from with no-child-launch diagnostics, portable rewrite guidance, workflow ids, and completed-child output references (#1432, #1434).
-- Report child processes that exit during tool execution as mid-tool failures instead of cold starts, even when earlier assistant text exists. Thanks to [@cyzlmh](https://github.com/cyzlmh) for #1437.
-- Keep unaddressable legacy result aliases and overlong public result filenames from blocking canonical hashed or pending fallbacks. Thanks to [@LeonardBode](https://github.com/LeonardBode) for #1440.
+## [0.57.0] - 2026-08-26
+
+### Highlights
+- Run Codex, Claude Code, and Cursor Agent subagents with packaged read-only and writing profiles.
+- Validate workflow scripts before launch, and reuse workflow code from files with `workflowScriptPath`.
+- Resume, inspect, and recover workflow children more reliably after errors, compaction, or session reloads.
+- See clearer Fleet and status output, including task labels and live context-window usage.
+- Recover from more async, scheduling, discovery, model fallback, and Windows edge cases without losing useful run history.
 
 ### Added
-- Add a package-internal one-use permit for one exact native child in a foreground `workflowScript`. Thanks to [@maroffo](https://github.com/maroffo) for #1494.
-- Add configured pruned fork sessions with budgeted transcript-overflow summaries, stable child-visible recovery refs, and private validated recovery sidecars while preserving normal fork links and safety behavior.
-- Load `workflowScript` from `workflowScriptPath` for execution, offline validation, and schedule creation. Thanks to [@elecnix](https://github.com/elecnix) for #1464.
+- Add read-only and workspace-writing profiles for `codex-exec`, `claude-code`, and `cursor-agent`, with bounded result capture and opt-in smoke checks.
+- Add external one-shot runner support for bounded parser hooks and logs, environment allowlists, cached launch preflight, parser progress, and process cleanup.
+- Add compact external CLI capability and receipt metadata for adapter identity, artifacts, handoff mode, supervisor support, and resumability.
+- Add configured pruned fork sessions with budgeted transcript-overflow summaries, stable recovery refs, and private recovery sidecars.
 - Add offline `workflowScript` syntax and structural validation through the public subagent tool. Thanks to [@elecnix](https://github.com/elecnix) for #1462.
-- Expose a bounded, versioned workflow-child summary across workflow results, status, receipts, and completion replay. Thanks to [@rochecompaan](https://github.com/rochecompaan) for #1453.
-- Show live context-window usage separately from cumulative token spend in status and Fleet views. Thanks to [@nazzeDe](https://github.com/nazzeDe) for #1444.
-- Show active workflow task labels in compact status surfaces and Herdr pane metadata. Thanks to [@phoenixdam](https://github.com/phoenixdam) for #1459.
-- Add `modelExclusions.defaultTtlMs` configuration for controlling the lifetime of model exclusions, including shorter limits for active cached entries, with launch diagnostics for excluded candidates. Thanks to [@mithyer](https://github.com/mithyer) for #1439 and #1438.
-- Add code-owned `cursor-agent` read-only and `cursor-agent-writer` workspace-writing profiles with private prompt-file handoff, bounded stream-JSON terminal proof, and opt-in mode-specific smoke evidence.
-- Add code-owned `claude-code` read-only and `claude-code-writer` file-editing profiles for an existing authenticated CLI with trusted user settings, bounded stream-JSON result proof, and opt-in mode-specific smoke evidence.
-- Add code-owned `codex-exec` read-only and `codex-exec-writer` workspace-writing profiles with bounded JSONL terminal proof, final-message artifacts, and opt-in mode-specific smoke evidence.
-- External CLI runs now publish code-owned capability limits and compact workflow receipt metadata for adapter identity, artifacts, handoff mode, supervisor support, and resumability.
-- External one-shot runners now support bounded parser hooks and logs, environment allowlists, cached launch preflight, coalesced parser progress, and process-tree cleanup.
+- Add `workflowScriptPath` so workflows can be loaded from files for execution, validation, and schedules. Thanks to [@elecnix](https://github.com/elecnix) for #1464.
+- Add bounded workflow-child summaries to workflow results, status, receipts, and completion replay. Thanks to [@rochecompaan](https://github.com/rochecompaan) for #1453.
+- Add live context-window usage to status and Fleet views, separate from cumulative token spend. Thanks to [@nazzeDe](https://github.com/nazzeDe) for #1444.
+- Add active workflow task labels to compact status surfaces and Herdr pane metadata. Thanks to [@phoenixdam](https://github.com/phoenixdam) for #1459.
+- Add `modelExclusions.defaultTtlMs` for controlling how long model exclusions stay active, with launch diagnostics for skipped candidates. Thanks to [@mithyer](https://github.com/mithyer) for #1439 and #1438.
+- Add a package-internal one-use permit for one exact native child in a foreground `workflowScript`. Thanks to [@maroffo](https://github.com/maroffo) for #1494.
+
+### Fixed
+- Preserve agent frontmatter output defaults for prompt-template delegated leaves. Thanks to [@ashlineldridge](https://github.com/ashlineldridge) for #1521.
+- Preserve structured-output and related bounded child contract fields when foreground workflow children resume. Thanks to [@Livan-pro](https://github.com/Livan-pro) for #1460.
+- Preserve typed errors, partial output, transcript metadata, and artifact metadata when foreground workflow children resume. See #1513.
+- Keep inline workflow children resumable from their foreground runs without mistaking a missing async directory for lost state. Thanks to [@lancegui](https://github.com/lancegui) for #1442.
+- Make workflow validation and return serialization failures easier to recover from with no-child-launch diagnostics, portable rewrite guidance, workflow ids, and completed-child output references (#1432, #1434).
+- Clarify terminal keyed workflow-resume failures when `workflow-receipt.json` is unavailable, including direct child-run recovery from status and event logs (#1512).
+- Preserve bounded async child failure context after compaction, including missing file-only output, instead of leaving failed run summaries empty. See #1495.
+- Ignore stale child-settled events from retrying compaction attempts, so resumed children are not aborted before their replacement attempt can finish. See #1504.
+- Make async runs visible to exact status lookup as soon as launch succeeds, and deliver one completion when a runner dies before its normal status write. Thanks to [@rafafortes](https://github.com/rafafortes) for #1471 and [@VincentHanxiaoDu](https://github.com/VincentHanxiaoDu) for #1480.
+- Record explicit completed, failed, timed-out, stopped, and interrupted outcomes in run history. Thanks to [@rafafortes](https://github.com/rafafortes) for #1474.
+- Repair bounded dead async run candidates before retention classifies them, so stale run directories can be reclaimed without deleting ambiguous worktrees or branches. Thanks to [@rafafortes](https://github.com/rafafortes) for #1477.
+- Exclude completed one-shot schedules from the pending schedule limit without deleting their durable history. Thanks to [@rafafortes](https://github.com/rafafortes) for #1478.
+- Reclaim failed async capacity slots after a configurable abandoned timeout when the runner PID is gone, while keeping clear diagnostics for unknown process state. Thanks to [@rafafortes](https://github.com/rafafortes) for #1472.
+- Preserve parent model inheritance for workflow children when workflow setup reads session data before launch, and avoid carrying a stale live-session model into scheduled owners. Thanks to [@alexei-led](https://github.com/alexei-led) for #1489 and #1490.
+- Retry fallback models for transient provider connection failures. Thanks to [@genkikadomatsu](https://github.com/genkikadomatsu) for #1508.
+- Resolve the `advisor` builtin alias through the bundled `oracle` definition in model listings. Thanks to [@smileBeda](https://github.com/smileBeda) for #1502.
+- Follow symlinked directories during agent discovery without revisiting recursive links. Thanks to [@robsdudeson](https://github.com/robsdudeson) for #1505 and #1510.
+- Explain unknown-agent failures with the effective cwd and discovery inputs. Thanks to [@genkikadomatsu](https://github.com/genkikadomatsu) for #1511.
+- Resolve package subagents from bare HTTP(S) Git URLs stored in Pi settings. Thanks to [@trancikk](https://github.com/trancikk) for #1452.
+- Preview runtime-recorded workflow child sessions in Fleet and inspect without trusting sibling transcripts. Thanks to [@JHa13y](https://github.com/JHa13y) for #1441.
+- Distinguish same-agent parallel children in Fleet with their explicit task labels. Thanks to [@ljie-PI](https://github.com/ljie-PI) for #1487.
+- Preserve the local user identity and temporary-directory environment needed by authenticated Claude Code adapter runs.
+- Report child processes that exit during tool execution as mid-tool failures instead of cold starts, even when earlier assistant text exists. Thanks to [@cyzlmh](https://github.com/cyzlmh) for #1437.
+- Keep unaddressable legacy result aliases and overlong public result filenames from blocking canonical hashed or pending fallbacks. Thanks to [@LeonardBode](https://github.com/LeonardBode) for #1440.
+- Bypass repository fsmonitor hooks when collecting mutation evidence. Thanks to [@jpriverar](https://github.com/jpriverar) for #1497.
+- Avoid the fatal Node `ReadFileUtf8` retention path. Thanks to [@pgoodjohn](https://github.com/pgoodjohn) for #1501.
+- Base64-encode Herdr inspector session roots so `inspector.open` handles Windows PowerShell argument parsing correctly. Thanks to [@stavg91](https://github.com/stavg91) for #1499.
+- Keep async runner terminal event delivery from crashing the session when the captured extension context is stale after a session replacement or reload. Thanks to [@AdrianAcala](https://github.com/AdrianAcala) for #1485.
+- Reject non-string workflow-child summary identifiers when reading receipt metadata.
 
 ## [0.56.0] - 2026-08-23
 
