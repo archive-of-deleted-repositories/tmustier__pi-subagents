@@ -22,6 +22,8 @@ interface AsyncRunStepSummary {
 	index: number;
 	childId?: string;
 	agent: string;
+	/** Human-readable display name for the child session, when derived at launch. */
+	sessionName?: string;
 	context?: ContextMode;
 	label?: string;
 	description?: string;
@@ -271,6 +273,7 @@ function statusToSummary(asyncDir: string, status: AsyncStatus & { cwd?: string 
 			index,
 			childId: asyncStatusChildIdentity(step, index),
 			agent: step.agent,
+			...(step.sessionName ? { sessionName: step.sessionName } : {}),
 			...(step.context ? { context: step.context } : {}),
 			...(step.label ? { label: step.label } : {}),
 			...(step.description ? { description: step.description } : {}),
@@ -523,7 +526,7 @@ function formatActivityFacts(input: { activityState?: ActivityState; lastActivit
 }
 
 function formatStepLine(step: AsyncRunStepSummary): string {
-	const display = step.label ? `${step.label} (${step.agent})` : step.agent;
+	const display = step.sessionName?.trim() || (step.label ? `${step.label} (${step.agent})` : step.agent);
 	const context = contextModeLabel(step.context);
 	const phase = step.phase ? `[${step.phase}] ` : "";
 	const parts = [`${step.index + 1}. ${phase}${display}${context ? ` ${context}` : ""}`, step.status];
