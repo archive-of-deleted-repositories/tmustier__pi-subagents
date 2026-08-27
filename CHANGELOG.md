@@ -7,6 +7,7 @@
 - Extract completion evidence planning into a focused module shared by foreground and background execution.
 - Extract direct MCP grant planning into a pure module while keeping source loading and child launch wiring in adapters.
 - Remove assistant turn budgets, including hard termination, wrap-up prompt injection, and launch/configuration surface.
+- Show workflow child labels and phases in async status progress while preserving stable workflow keys.
 
 ## [0.58.0] - 2026-08-27
 
