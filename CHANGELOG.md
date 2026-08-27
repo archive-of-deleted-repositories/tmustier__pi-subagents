@@ -2,28 +2,35 @@
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-08-27
+
+### Highlights
+- Launch MCP tools from more places, including runtime-registered servers, Pi package manifests, and Agent Plugin configs.
+- Keep agent context smaller by default, with an explicit `inheritGlobalContext` opt-in when a child needs the operator's global context.
+- Make detached and recovered workflow results more reliable, with clearer terminal handoffs and recovery actions.
+- Show better launch and status diagnostics for workspace, authority, context-window, and missing-directory problems.
+- Keep fast OpenAI-Codex launches compatible with priority service tier without losing provider request fields.
+
 ### Added
 - Support direct MCP tool launches from runtime-registered servers.
-- Document per-run thinking suffixes in model-facing subagent guidance. Thanks to [@yanqianglu](https://github.com/yanqianglu) for #1565.
 - Add `inheritGlobalContext` agent configuration so children can opt into the operator's global context file separately from repository context. Thanks to [@hknatm](https://github.com/hknatm) for #1560.
 - Add process-local event registration so independent Pi extensions can register runtime agents through the installed owner. Thanks to [@fmoda3](https://github.com/fmoda3) for #1533.
 - Add advisory launch preflight diagnostics for likely workspace scope and authority mismatches.
+- Document per-run thinking suffixes in model-facing subagent guidance. Thanks to [@yanqianglu](https://github.com/yanqianglu) for #1565.
 - Document unsupported native child options for external CLI agents in the subagent tool help, packaged guide, and packaged skill.
 
 ### Changed
 - Agents now omit the operator's global context file by default, including existing agents with `inheritProjectContext: true`; set `inheritGlobalContext: true` to preserve the previous behavior. Thanks to [@hknatm](https://github.com/hknatm) for #1560.
-- Remove redundant utility-file comments left over from older generated cleanup.
 
 ### Fixed
 - Fail explicitly requested models closed when a cached model exclusion is active, instead of silently selecting a fallback. Thanks to [@harpsychord](https://github.com/harpsychord) for #1556.
 - Preserve fast-mode provider request root fields when adding OpenAI's priority service tier. Thanks to [@nothingrotf](https://github.com/nothingrotf) for #1570.
 - Classify workflow budget and timeout stops as partial terminal outcomes while preserving settled child evidence. Thanks to [@yceachan](https://github.com/yceachan) for #1530.
-- Show task intent and context-window use in compact in-progress async status rows.
-- Avoid attributing assistant-issued workflow stops to the user.
 - Publish a deterministic terminal handoff with settled child evidence and keyed recovery actions when detached workflow lanes settle. Thanks to [@yceachan](https://github.com/yceachan) for #1530.
 - Resolve direct MCP tool selections from Pi package manifests and Agent Plugin configs. Thanks to [@fmoda3](https://github.com/fmoda3) for #1541.
 - Fail closed with a launch diagnostic when configured runtime-style MCP direct-tool selectors cannot be resolved.
 - Sync Herdr status after restoring active async jobs, so recovered work appears without waiting for another lifecycle event. Thanks to [@vicocamacho](https://github.com/vicocamacho) for #1553.
+- Show task intent and context-window use in compact in-progress async status rows.
 - Report deterministic settlement diagnostics when background children fail before required output handoff.
 - Auto-resume workflow children once after setup-phase aborts that produce zero usage, preserving the retained transcript instead of rerunning the whole task.
 - Finalize detached foreground worktree handoffs after terminal child completion, preserving captured changes before cleanup. Thanks to [@jpriverar](https://github.com/jpriverar) for #1562.
@@ -32,6 +39,7 @@
 - Stop same-session workflows recovered after extension reload through the durable control channel.
 - Let agents declare extension mutation tools so real non-Git or untracked edits satisfy the implementation completion guard. Thanks to [@AlphaGodzilla](https://github.com/AlphaGodzilla) for #1532.
 - Deliver async results from an explicitly replaced predecessor session without accepting unrelated session results. Thanks to [@DresvyanskiyDenis](https://github.com/DresvyanskiyDenis) for #1531.
+- Avoid attributing assistant-issued workflow stops to the user.
 
 ## [0.57.0] - 2026-08-26
 
