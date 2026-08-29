@@ -517,8 +517,13 @@ export function resolvePiLaunchToolPlan(
 		throw new Error(formatUnresolvedMcpDirectToolSelectors(mcpResolution.unresolvedSelectors));
 	}
 	const resolvedMcpSelections = mcpResolution.selections;
+	const resolvedMcpNames = new Set(resolvedMcpSelections.map((selection) => selection.name));
+	const legacyMcpNameCounts = countLegacyUnderscoreMcpToolNames(resolvedMcpSelections);
 	const effectiveMcpSelections = resolvedMcpSelections.filter(
-		(selection) => !allowedToolSet || allowedToolSet.has(selection.name),
+		(selection) =>
+			!allowedToolSet ||
+			allowedToolSet.has(selection.name) ||
+			isLegacyUnderscoreMcpToolAllowed(selection, allowedToolSet, resolvedMcpNames, legacyMcpNameCounts),
 	);
 	const effectiveMcpTools = effectiveMcpSelections.map(
 		(selection) => selection.name,
@@ -671,6 +676,36 @@ export function resolvePiLaunchToolPlan(
 			: {}),
 		...(capabilityAudit ? { capabilityAudit } : {}),
 	};
+}
+
+// Capability ceilings persisted before #1685 may still name hyphenated MCP server prefixes with underscores.
+function countLegacyUnderscoreMcpToolNames(selections: readonly ResolvedMcpDirectToolSelection[]): Map<string, number> {
+	const counts = new Map<string, number>();
+	for (const selection of selections) {
+		const legacyName = legacyUnderscoreMcpToolName(selection);
+		if (legacyName !== selection.name) counts.set(legacyName, (counts.get(legacyName) ?? 0) + 1);
+	}
+	return counts;
+}
+
+function isLegacyUnderscoreMcpToolAllowed(
+	selection: ResolvedMcpDirectToolSelection,
+	allowedToolSet: ReadonlySet<string>,
+	resolvedMcpNames: ReadonlySet<string>,
+	legacyMcpNameCounts: ReadonlyMap<string, number>,
+): boolean {
+	const legacyName = legacyUnderscoreMcpToolName(selection);
+	return legacyMcpNameCounts.get(legacyName) === 1 && !resolvedMcpNames.has(legacyName) && allowedToolSet.has(legacyName);
+}
+
+function legacyUnderscoreMcpToolName(selection: ResolvedMcpDirectToolSelection): string {
+	const slash = selection.selector.indexOf("/");
+	if (slash < 1) return selection.name;
+	const toolName = selection.selector.slice(slash + 1);
+	const suffix = `_${toolName}`;
+	if (!selection.name.endsWith(suffix)) return selection.name;
+	const prefix = selection.name.slice(0, -suffix.length);
+	return `${prefix.replace(/-/g, "_")}${suffix}`;
 }
 
 /** Escape XML-significant characters in a string for safe attribute interpolation. */
