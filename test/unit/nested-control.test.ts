@@ -16,6 +16,7 @@ import { makeAgent } from "../support/helpers.ts";
 import { externalJobPromptDigest, runExternalJob } from "../../src/runs/shared/external-job-runner.ts";
 import { serviceExternalJobBridgeRequests } from "../../src/runs/shared/external-job-bridge.ts";
 import { isActiveAsyncState } from "../../src/runs/background/active-run-index.ts";
+import { readProcessTerminal } from "../../src/runs/background/process-terminal.ts";
 import { readStatus } from "../../src/shared/utils.ts";
 
 const routeRoots: string[] = [];
@@ -741,7 +742,9 @@ interface NestedRunOptions {
 }
 
 /** Writes a terminal nested run of the fanout child under `route`, with its own run directory. */
-function writeNestedRun(route: ReturnType<typeof createNestedRoute>, runId: string, cwd: string, options: NestedRunOptions = {}): string {
+function writeNestedRun(route: ReturnType<typeof createNestedRoute>, runId: string, options: NestedRunOptions = {}): string {
+	// A follow-up runner starts in the source run's cwd, so record one that per-test teardown never removes.
+	const cwd = os.tmpdir();
 	const asyncDir = path.join(TEMP_ROOT_DIR, "nested-subagent-runs", route.rootRunId, runId);
 	fs.mkdirSync(asyncDir, { recursive: true });
 	if (options.statusText !== null) {
@@ -757,16 +760,6 @@ function writeNestedRun(route: ReturnType<typeof createNestedRoute>, runId: stri
 		child: { id: runId, parentRunId: route.rootRunId, parentStepIndex: 0, depth: 1, path: [{ runId: route.rootRunId, stepIndex: 0 }], state: "complete", agent: "advisor", ownerState: "gone", asyncDir, ...options.summary },
 	});
 	return asyncDir;
-}
-
-function processExists(pid: number | undefined): boolean {
-	if (pid === undefined) return false;
-	try {
-		process.kill(pid, 0);
-		return true;
-	} catch {
-		return false;
-	}
 }
 
 describe("nested external-job follow-up", () => {
@@ -809,10 +802,13 @@ describe("nested external-job follow-up", () => {
 		for (;;) {
 			serviceExternalJobBridgeRequests(followUpDir);
 			const status = readStatus(followUpDir);
-			if (followUps.length > 0 && status && !isActiveAsyncState(status.state) && !processExists(status.pid)) return;
+			const runnerId = status?.processTerminal?.runnerProcessInstanceId;
+			const terminal = runnerId ? readProcessTerminal(followUpDir, { runId: followUpId, runnerProcessInstanceId: runnerId }) : undefined;
+			if (followUps.length > 0 && status && !isActiveAsyncState(status.state) && terminal?.state === "observed"
+				&& terminal.instances?.some((instance) => instance.kind === "runner" && instance.processInstanceId === runnerId && instance.exitCode === 0)) return;
 			if (Date.now() >= deadline) {
 				const stderrPath = path.join(followUpDir, "runner.stderr.log");
-				assert.fail(`Timed out waiting for the external-job follow-up to finish; status=${JSON.stringify(status)}; stderr=${fs.existsSync(stderrPath) ? fs.readFileSync(stderrPath, "utf-8") : "missing"}`);
+				assert.fail(`Timed out waiting for the external-job follow-up to finish; status=${JSON.stringify(status)}; terminal=${JSON.stringify(terminal)}; stderr=${fs.existsSync(stderrPath) ? fs.readFileSync(stderrPath, "utf-8") : "missing"}`);
 			}
 			await new Promise((resolve) => setTimeout(resolve, 25));
 		}
@@ -835,7 +831,7 @@ describe("nested external-job follow-up", () => {
 
 	it("follows up a completed external-job run that the child launched", async () => {
 		registerAdvisor();
-		writeNestedRun(route, runId, root);
+		writeNestedRun(route, runId);
 
 		const result = await resume();
 
@@ -849,7 +845,7 @@ describe("nested external-job follow-up", () => {
 
 	it("reports a repeated child follow-up as existing instead of calling the provider again", async () => {
 		registerAdvisor();
-		writeNestedRun(route, runId, root);
+		writeNestedRun(route, runId);
 		const first = await resume();
 		await runFollowUp(String(first.details?.asyncDir));
 
@@ -863,7 +859,7 @@ describe("nested external-job follow-up", () => {
 
 	it("follows up the indexed external-job step of a multi-step nested run", async () => {
 		registerAdvisor();
-		writeNestedRun(route, runId, root, { steps: [{ agent: "worker", status: "complete" }, externalJobStep({ providerJobId: "job-second" })] });
+		writeNestedRun(route, runId, { steps: [{ agent: "worker", status: "complete" }, externalJobStep({ providerJobId: "job-second" })] });
 
 		const result = await resume({ index: 1 });
 
@@ -874,7 +870,7 @@ describe("nested external-job follow-up", () => {
 
 	it("lets the root session follow up an external-job run that its child launched", async () => {
 		registerAdvisor();
-		writeNestedRun(route, runId, root);
+		writeNestedRun(route, runId);
 
 		const result = await resume({}, "root");
 
@@ -899,7 +895,7 @@ describe("nested external-job follow-up", () => {
 	for (const refusal of refusals) {
 		it(`fails closed without a follow-up for ${refusal.name}`, async () => {
 			registerAdvisor(refusal.provider);
-			writeNestedRun(route, runId, root, refusal.run);
+			writeNestedRun(route, runId, refusal.run);
 
 			const result = await resume(refusal.params);
 
@@ -916,7 +912,7 @@ describe("nested external-job follow-up", () => {
 		cleanup.push(outside);
 		fs.mkdirSync(outside, { recursive: true });
 		fs.writeFileSync(path.join(outside, "status.json"), JSON.stringify({ runId, mode: "single", state: "complete", startedAt: 100, lastUpdate: 200, cwd: root, steps: [externalJobStep({ providerJobId: "job-foreign" })] }), "utf-8");
-		writeNestedRun(route, runId, root, { statusText: null, summary: { asyncDir: outside } });
+		writeNestedRun(route, runId, { statusText: null, summary: { asyncDir: outside } });
 
 		const result = await resume();
 
